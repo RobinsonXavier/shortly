@@ -8,7 +8,7 @@ const signupSchema = joi.object({
 });
 
 const singinSchema = joi.object({
-    username: joi.string().required().min(3).max(25),
+    email: joi.string().email({minDomainSegments: 2, tlds: { allow: ['com', 'net']}}).required(),
     password: joi.string().required().min(8)
 })
 
