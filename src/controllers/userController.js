@@ -37,4 +37,18 @@ async function getUser (req, res) {
     }
 };
 
-export {getUser};
+async function getRanking (req, res) {
+
+    try {
+
+        const usersRanking = await connection.query(`SELECT users.id as id, users.username as name, users."linkCount" as "linkCount", users."visitCount" as "visitCount" FROM users LIMIT 10 GROUP BY visits."visitCount" DESC;`);
+
+        res.status(200).send(usersRanking.rows);
+        
+    } catch (error) {
+        console.log(error)
+        return res.sendStatus(500)
+    }
+};
+
+export {getUser, getRanking};

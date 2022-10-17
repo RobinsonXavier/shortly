@@ -1,4 +1,3 @@
-
 import { nanoid } from "nanoid";
 
 import { connection } from "../database/db.js";
@@ -30,13 +29,9 @@ async function postUrl (req, res) {
         await connection.query(`INSERT INTO shorteneds ("userId", url, "shortUrl", "visitCount") VALUES ($1, $2, $3, $4);`, 
         [session.rows[0].userId, url, shortened, 0]);
 
-        const userVisits = (`SELECT * FROM visits WHERE "userId" = $1;`, [session.rows[0].userId]);
+        const linkNumber = await connection.query(`SELECT * FROM shorteneds WHERE "userId" = $1;`, [session.rows[0].userId]);
 
-        if(!userVisits.rows[0]) {
-
-            await connection.query(`INSERT INTO visits ("userId", "visitCount") VALUES ($1, $2);`, [session.rows[0].userId, 0]);
-
-        }
+        await connection.query(`UPDATE users SET "linkCount" = $1 WHERE users.id = $2;`, [linkNumber.rows.length, session.rows[0].userId]);
 
         res.status(201).send({
             shortUrl: shortened
@@ -86,13 +81,13 @@ async function acessUrl (req, res) {
 
         const addOne = Number(searchUrl.rows[0].visitCount) + 1;
 
-        const userVisits = await connection.query(`SELECT * FROM visits WHERE "userId" = $1;`, [user]);
+        const userVisits = await connection.query(`SELECT * FROM users WHERE users.id = $1;`, [user]);
 
         const addOneUserVisit = Number(userVisits.rows[0].visitCount) + 1;
 
         await connection.query(`UPDATE shorteneds SET "visitCount" = $1 WHERE id = $2;`, [addOne, searchUrl.rows[0].id]);
 
-        await connection.query(`UPDATE visits SET "visitCount" = $1 WHERE "userId" = $2;`, [addOneUserVisit, user]);
+        await connection.query(`UPDATE users SET "visitCount" = $1 WHERE users.id = $2;`, [addOneUserVisit, user]);
 
         res.status(200);
         res.redirect(searchUrl.rows[0].url);
@@ -122,13 +117,23 @@ async function deleteUrl (req, res) {
             return res.sendStatus(404);
         }
 
-        const userVisits = await connection.query(`SELECT * FROM visits WHERE "userId" = $1;`, [shortened.rows[0].userId]);
+        const userVisits = await connection.query(`SELECT * FROM users WHERE users.id = $1;`, [shortened.rows[0].userId]);
 
         const removeVisits = Number(userVisits.rows[0].visitCount) - Number(shortened.rows[0].visitCount);
 
-        await connection.query(`UPDATE visits SET "visitCount" = $1 WHERE "userId" = $2;`, [removeVisits, shortened.rows[0].userId]);
-        
+        await connection.query(`UPDATE users SET "visitCount" = $1 WHERE users.id = $2;`, [removeVisits, shortened.rows[0].userId]);
+
         await connection.query(`DELETE FROM shorteneds WHERE id = $1;`, [id]);
+
+        let linkNumber = await connection.query(`SELECT * FROM shorteneds WHERE "userId" = $1;`, [shortened.rows[0].userId]);
+
+        if (!linkNumber.rows[0]) {
+            await connection.query(`UPDATE users SET "linkCount" = $1 WHERE users.id = $2;`, [0, shortened.rows[0].userId]);
+
+            return res.sendStatus(204);
+        }
+
+        await connection.query(`UPDATE users SET "linkCount" = $1 WHERE users.id = $2;`, [linkNumber.rows.length, shortened.rows[0].userId]);
 
         return res.sendStatus(204);
         

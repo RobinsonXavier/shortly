@@ -34,7 +34,8 @@ async function signupAccount (req, res) {
 
         const hashPassword = bcrypt.hashSync(password, 10);
 
-        await connection.query(`INSERT INTO users (username, email, password) VALUES ($1, $2, $3);`, [username, email, hashPassword]);
+        await connection.query(`INSERT INTO users (username, email, password, "linkCount", "visitCount") VALUES ($1, $2, $3, $4, $5);`, 
+        [username, email, hashPassword, 0, 0]);
         
         res.sendStatus(201);
 
