@@ -117,4 +117,4 @@ async function deleteUrl (req, res) {
 };
 
 
-export {postUrl , getUrl, acessUrl};
+export {postUrl , getUrl, acessUrl, deleteUrl};
