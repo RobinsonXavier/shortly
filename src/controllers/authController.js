@@ -20,13 +20,13 @@ async function signupAccount (req, res) {
 
     try {
 
-        const findEmail = await connection.query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const findEmail = await connection.query(`SELECT * FROM users WHERE email = $1;`, [email]);
         
         if (findEmail.rows[0]) {
             return res.status(409).send('email already used');
         }
 
-        const findName = await connection.query(`SELECT * FROM users where username = $1`, [username]);
+        const findName = await connection.query(`SELECT * FROM users where username = $1;`, [username]);
 
         if (findName.rows[0]) {
             return res.status(409).send('username already used');
@@ -34,7 +34,7 @@ async function signupAccount (req, res) {
 
         const hashPassword = bcrypt.hashSync(password, 10);
 
-        await connection.query(`INSERT INTO users (username, email, password) VALUES ($1, $2, $3)`, [username, email, hashPassword]);
+        await connection.query(`INSERT INTO users (username, email, password) VALUES ($1, $2, $3);`, [username, email, hashPassword]);
         
         res.sendStatus(201);
 
@@ -56,7 +56,7 @@ async function signinAccount (req, res) {
 
     try {
         
-        const checkUser = await connection.query(`SELECT * FROM users where email = $1`, [email]);
+        const checkUser = await connection.query(`SELECT * FROM users where email = $1;`, [email]);
 
         if (!checkUser.rows[0]) {
             return res.status(401).send('email or password is invalid')
@@ -70,10 +70,12 @@ async function signinAccount (req, res) {
 
         const token = uuid();
 
-        await connection.query(`INSERT INTO sessions ("userId", token, "lastStatus") VALUES ($1, $2, $3)`, 
+        await connection.query(`INSERT INTO sessions ("userId", token, "lastStatus") VALUES ($1, $2, $3);`, 
         [checkUser.rows[0].id, token, Date.now()]);
 
-        return res.sendStatus(200);
+        return res.status(200).send({
+            token
+        });
 
 
     } catch (error) {
