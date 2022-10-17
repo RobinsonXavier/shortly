@@ -64,7 +64,7 @@ async function getUrl (req, res) {
     }
 };
 
-async function acessUrl(req, res) {
+async function acessUrl (req, res) {
     const {shortUrl} = req.params;
 
     try {
@@ -80,6 +80,35 @@ async function acessUrl(req, res) {
 
         res.status(200);
         res.redirect(searchUrl.rows[0].url);
+        
+    } catch (error) {
+        console.log(error)
+        return res.sendStatus(500)
+    }
+};
+
+async function deleteUrl (req, res) {
+    const {authorization} = req.headers;
+    const {id} = req.params;
+
+    const token = authorization?.replace('Bearer ', '');
+
+    try {
+        const check = connection.query(`SELECT * FROM sessions WHERE token = $1;`, [token]);
+
+        if(!check.rows[0]) {
+            return res.sendStatus(401);
+        }
+
+        const shortened = await connection.query(`SELECT * FROM shorteneds WHERE id = $1;`, [id]);
+
+        if (!shortened.rows[0]) {
+            return res.sendStatus(404);
+        }
+        
+        await connection.query(`DELETE FROM shorteneds WHERE id = $1;`, [id]);
+
+        return res.sendStatus(204);
         
     } catch (error) {
         console.log(error)
