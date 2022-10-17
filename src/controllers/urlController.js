@@ -3,10 +3,7 @@ import { nanoid } from "nanoid";
 import { connection } from "../database/db.js";
 
 async function postUrl (req, res) {
-    const {authorization} = req.headers;
     const {url} = req.body;
-
-    const token = authorization?.replace('Bearer ', '');
 
     const tryUrl = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/
     
@@ -19,12 +16,6 @@ async function postUrl (req, res) {
     const shortened = nanoid();
 
     try {
-
-        const session = await connection.query(`SELECT * FROM sessions WHERE token = $1;`, [token]);
-
-        if(!session) {
-            return res.sendStatus(401);
-        }
         
         await connection.query(`INSERT INTO shorteneds ("userId", url, "shortUrl", "visitCount") VALUES ($1, $2, $3, $4);`, 
         [session.rows[0].userId, url, shortened, 0]);
@@ -99,17 +90,9 @@ async function acessUrl (req, res) {
 };
 
 async function deleteUrl (req, res) {
-    const {authorization} = req.headers;
     const {id} = req.params;
 
-    const token = authorization?.replace('Bearer ', '');
-
     try {
-        const check = connection.query(`SELECT * FROM sessions WHERE token = $1;`, [token]);
-
-        if(!check.rows[0]) {
-            return res.sendStatus(401);
-        }
 
         const shortened = await connection.query(`SELECT * FROM shorteneds WHERE id = $1;`, [id]);
 
