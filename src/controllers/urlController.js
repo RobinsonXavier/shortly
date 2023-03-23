@@ -4,6 +4,7 @@ import { connection } from "../database/db.js";
 
 async function postUrl (req, res) {
     const {url} = req.body;
+    const userId = res.locals.userId;
 
     const tryUrl = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/
     
@@ -18,11 +19,11 @@ async function postUrl (req, res) {
     try {
         
         await connection.query(`INSERT INTO shorteneds ("userId", url, "shortUrl", "visitCount") VALUES ($1, $2, $3, $4);`, 
-        [session.rows[0].userId, url, shortened, 0]);
+        [userId, url, shortened, 0]);
 
-        const linkNumber = await connection.query(`SELECT * FROM shorteneds WHERE "userId" = $1;`, [session.rows[0].userId]);
+        const linkNumber = await connection.query(`SELECT * FROM shorteneds WHERE "userId" = $1;`, [userId]);
 
-        await connection.query(`UPDATE users SET "linkCount" = $1 WHERE users.id = $2;`, [linkNumber.rows.length, session.rows[0].userId]);
+        await connection.query(`UPDATE users SET "linkCount" = $1 WHERE users.id = $2;`, [linkNumber.rows.length, userId]);
 
         res.status(201).send({
             shortUrl: shortened
@@ -42,7 +43,7 @@ async function getUrl (req, res) {
 
     try {
         const searchUrl = await connection.query(`SELECT * FROM shorteneds WHERE id = $1;`, [id]);
-        
+        console.log(searchUrl);
         if(!searchUrl.rows[0]) {
             return res.sendStatus(404);
         }
@@ -91,13 +92,17 @@ async function acessUrl (req, res) {
 
 async function deleteUrl (req, res) {
     const {id} = req.params;
-
+    const userId = res.locals.userId;
     try {
 
         const shortened = await connection.query(`SELECT * FROM shorteneds WHERE id = $1;`, [id]);
 
         if (!shortened.rows[0]) {
             return res.sendStatus(404);
+        }
+
+        if(userId !== shortened.rows[0].userId) {
+            return res.sendStatus(401);
         }
 
         const userVisits = await connection.query(`SELECT * FROM users WHERE users.id = $1;`, [shortened.rows[0].userId]);
