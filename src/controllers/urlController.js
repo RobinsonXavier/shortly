@@ -11,7 +11,7 @@ async function postUrl (req, res) {
     const verify = url.match(tryUrl);
 
     if(!verify) {
-        return res.status(422).send('Put a valid url')
+        return res.status(422).send('Coloque uma URL válida')
     }
 
     const shortened = nanoid();

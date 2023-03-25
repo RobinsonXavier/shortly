@@ -60,13 +60,13 @@ async function signinAccount (req, res) {
         const checkUser = await connection.query(`SELECT * FROM users where email = $1;`, [email]);
 
         if (!checkUser.rows[0]) {
-            return res.status(401).send('email or password is invalid')
+            return res.status(401).send('email ou senha inválidos')
         } 
 
         const verifyPassword = bcrypt.compareSync(password, checkUser.rows[0].password);
 
         if(!verifyPassword) {
-            return res.status(401).send('email or password is invalid')
+            return res.status(401).send('email ou senha inválidos')
         }
 
         const token = uuid();
@@ -81,10 +81,51 @@ async function signinAccount (req, res) {
 
     } catch (error) {
         console.log(error);
-        return res.sendStatus(500)
+        return res.sendStatus(500);
     }
 };
 
+async function updateSessionStatus (req, res) {
+    const { authorization, user } = req.headers;
+
+    const token = authorization?.replace('Bearer ', '');
+
+    try {
+        const session = await connection.query('SELECT * FROM users WHERE userId = $1;', [user.userId]);
+
+        if(!session.rows[0]) {
+            return res.status(404).send('Usuario não encontrado');
+        }
+
+        if(token !== session.token) {
+            return res.status(401).send('acesso não autorizado');
+        }
+
+        await connection.query('UPDATE sessions SET "lastStatus"= $1 WHERE userId = $2;', [Date.now(), user.userId]);
+
+        return res.status(200).send('Atualizado');
+        
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+}
+
+async function deleteOfflineSessions () {
+    const lastStatusUpdate = Date.now() - 15*1000;
+
+    try {
+        await connection.query('DELETE FROM sessions WHERE "lastStatus" <= $1;', [lastStatusUpdate]);
+        console.log('Atualizado');
+    } catch (error) {
+        console.log(error);
+        return;
+    }
+}
 
 
-export { signupAccount, signinAccount};
+export {
+    signupAccount, 
+    signinAccount,
+    updateSessionStatus,
+    deleteOfflineSessions};
