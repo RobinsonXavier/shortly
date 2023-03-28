@@ -73,8 +73,10 @@ async function signinAccount (req, res) {
 
         await connection.query(`INSERT INTO sessions ("userId", token, "lastStatus") VALUES ($1, $2, $3);`, 
         [checkUser.rows[0].id, token, Date.now()]);
-
+        console.log(checkUser)
         return res.status(200).send({
+            userId: checkUser.rows[0].id,
+            name: checkUser.rows[0].username,
             token
         });
 
