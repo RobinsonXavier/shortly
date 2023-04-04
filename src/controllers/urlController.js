@@ -43,7 +43,7 @@ async function getUrl (req, res) {
 
     try {
         const searchUrl = await connection.query(`SELECT * FROM shorteneds WHERE id = $1;`, [id]);
-        console.log(searchUrl);
+
         if(!searchUrl.rows[0]) {
             return res.sendStatus(404);
         }
@@ -58,6 +58,26 @@ async function getUrl (req, res) {
         return res.sendStatus(500)
     }
 };
+
+async function getUrls (req, res) {
+    const userId = res.locals.userId;
+
+    try {
+        const checkUser = await connection.query('SELECT * FROM users WHERE id = $1;', [userId]);
+
+        if(!checkUser.rows[0]) {
+            return res.sendStatus(404);
+        }
+
+        const response = await connection.query('SELECT * FROM shorteneds WHERE "userId" = $1;', [userId]);
+
+        return res.status(200).send(response.rows);
+
+    } catch (error) {
+        console.log(error)
+        return res.sendStatus(500)
+    }
+}
 
 async function acessUrl (req, res) {
     const {shortUrl} = req.params;
@@ -132,4 +152,10 @@ async function deleteUrl (req, res) {
 };
 
 
-export {postUrl , getUrl, acessUrl, deleteUrl};
+export {
+    postUrl ,
+    getUrl,
+    getUrls,
+    acessUrl,
+    deleteUrl
+};

@@ -91,19 +91,15 @@ async function updateSessionStatus (req, res) {
     const { authorization, user } = req.headers;
 
     const token = authorization?.replace('Bearer ', '');
-
+    
     try {
-        const session = await connection.query('SELECT * FROM users WHERE userId = $1;', [user.userId]);
+        const session = await connection.query('SELECT * FROM sessions WHERE "userId" = $1;', [user]);
 
-        if(!session.rows[0]) {
-            return res.status(404).send('Usuario não encontrado');
-        }
-
-        if(token !== session.token) {
+        if(token !== session.rows[0].token) {
             return res.status(401).send('acesso não autorizado');
         }
 
-        await connection.query('UPDATE sessions SET "lastStatus"= $1 WHERE userId = $2;', [Date.now(), user.userId]);
+        await connection.query('UPDATE sessions SET "lastStatus"= $1 WHERE "userId" = $2;', [Date.now(), user]);
 
         return res.status(200).send('Atualizado');
         
@@ -130,4 +126,5 @@ export {
     signupAccount, 
     signinAccount,
     updateSessionStatus,
-    deleteOfflineSessions};
+    deleteOfflineSessions
+};

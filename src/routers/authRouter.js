@@ -12,6 +12,6 @@ authRouter.post('/signup', signupAccount);
 
 authRouter.post('/signin', signinAccount);
 
-authRouter.put('/status', updateSessionStatus);
+authRouter.post('/status', updateSessionStatus);
 
 export default authRouter;
